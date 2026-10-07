@@ -1,0 +1,31 @@
+tracks:
+  ai_eng: ["ai engineer", "generative ai", "gen ai", "genai", "llm", "applied ai", "ai/ml engineer", "agent"]
+  ml_eng: ["machine learning engineer", "ml engineer", "mlops", "ml platform", "applied scientist", "research engineer", "machine learning scientist", "ai/ml engineer"]
+  ds: ["data scientist", "data science", "decision scientist", "applied data"]
+
+# Titles containing any of these are dropped (you have ~3 yrs experience).
+exclude_title: ["staff", "principal", "director", "head of", "vp ", "vice president", "manager", "intern", "internship", "sales", "recruiter", "solutions architect", "senior manager", "distinguished", "fellow", "strategy", "operations", "account ", "marketing", "partnerships", "customer success", "go-to-market", "gtm", "finance", "legal", "policy"]
+# Drops Senior / Sr / Lead / III / IV titles (you target 0-3 years).
+exclude_senior: true
+
+# Location: US only. Remote roles are kept unless they name a non-US country.
+us_only: true
+
+# Sponsorship handling (based on the posting's own wording):
+#   blocked  = posting says no sponsorship -> hidden by default
+#   unclear  = says nothing / "authorized to work" -> shown, flagged
+#   friendly = mentions sponsorship/transfer available -> shown, prioritized
+hide_blocked_sponsorship: true
+
+user_agent: "job-agent/0.1 (personal job search)"
+
+# Hard filters. Postings that state a pay range whose top is below min_salary, or a minimum
+# experience requirement above max_years, are dropped. Unstated values are kept and flagged.
+min_salary: 100000
+max_years: 3
+
+# Used by keyword-search sources (Himalayas, Remotive).
+search_queries: ["machine learning engineer", "data scientist", "ai engineer"]
+
+# Companies to never queue or apply to (matched case-insensitively against the company name).
+exclude_companies: ["openai"]

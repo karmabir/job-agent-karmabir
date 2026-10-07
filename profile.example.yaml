@@ -1,0 +1,45 @@
+# Copy to profile.yaml and fill in. profile.yaml is gitignored. It is the single source of truth:
+# tailoring may only select, reorder and rephrase what is here, and never add a claim or number.
+person:
+  name: Your Name
+  email: you@example.com
+  phone: "(000) 000-0000"
+  location: City, ST (open to relocation)
+  linkedin: https://www.linkedin.com/in/your-handle/
+  github: https://github.com/your-handle
+
+work_authorization:
+  status: describe your status
+  needs_sponsorship: false
+
+summary_variants:        # one short summary per track: ds, ml_eng, ai_eng
+  ds: "..."
+  ml_eng: "..."
+  ai_eng: "..."
+
+writing_rules:           # guardrails so metrics stay attached to what they measure
+  - "Each number stays attached to exactly what its own bullet says it measures."
+
+application_defaults:    # used by apply_assist.py to fill forms
+  identity_for_forms: {first_name: Your, last_name: Name, location_autocomplete: "City, State, United States", years_of_experience: 0}
+  current_employment: {company: "", title: "", start_month: "", start_year: 0, current: true}
+  education_for_forms: {school: "", degree: "", discipline: ""}
+  work_authorization_rules: "Describe how to answer authorization and sponsorship questions."
+  demographics_voluntary: {}
+  never_auto_answer: ["legal certifications and consents", "salary, start date, relocation"]
+
+experience:
+  - id: job1
+    company: Company
+    title: Title
+    location: City, ST
+    dates: Mon YYYY - Present
+    bullets:
+      - {id: job1-a, tags: [ds, ml_eng, ai_eng], text: "One factual bullet with its own metric."}
+
+publications: []
+projects: []
+skills: {machine_learning: [], tools: []}
+certifications: []
+education:
+  - {school: "", degree: "", gpa: "", dates: ""}
