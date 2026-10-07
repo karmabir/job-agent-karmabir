@@ -25,6 +25,8 @@ application_defaults:    # used by apply_assist.py to fill forms
   current_employment: {company: "", title: "", start_month: "", start_year: 0, current: true}
   education_for_forms: {school: "", degree: "", discipline: ""}
   work_authorization_rules: "Describe how to answer authorization and sponsorship questions."
+  open_to_relocation: false     # true = answer "willing to relocate?" with Yes (US roles only)
+  open_to_in_office: false      # true = accept hybrid/onsite questions with Yes (US roles only)
   demographics_voluntary: {}
   never_auto_answer: ["legal certifications and consents", "salary, start date, relocation"]
 

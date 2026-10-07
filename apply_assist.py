@@ -150,9 +150,17 @@ Hard rules:
 2c. If a question asks whether the candidate already lives near / can commute to an office located in
    PROFILE.application_defaults.residence_metro, answer that they already reside nearby (never the "willing to
    relocate" option). For offices elsewhere, skip it.
+2d. If PROFILE.application_defaults.open_to_relocation is true: a plain yes/no question about being willing to
+   relocate (or plan to relocate) to a role's location -> answer Yes. This covers ONLY willingness to relocate;
+   never start dates or relocation details/timelines/packages. Only for roles located in the US; for a
+   role outside the US, skip relocation questions.
+2e. If PROFILE.application_defaults.open_to_in_office is true: questions asking whether the candidate accepts,
+   acknowledges or is willing to work in-office / hybrid / onsite (any number of days) at a US location -> answer
+   Yes (choose the option that agrees, e.g. "Yes, I acknowledge..." or "Yes, I'm willing to relocate/commute").
+   Never invent a start date or answer questions about remote-only preference.
 3. NEVER answer: legal certifications/signatures/"I agree"/privacy/terms consents, SMS or AI-notetaker or
    data-processing consents, salary expectations, start date/notice period, pronouns, commitments about
-   in-office days / onsite schedules / relocation / travel / availability, "may we contact your
+   travel / availability, relocation details (except rule 2d) and in-office schedules (except rule 2e), "may we contact your
    current employer", why-relocate or visa specifics beyond the rules. Skip them with a short reason.
 4. Names, locations, GPA and years of experience: use PROFILE.application_defaults.identity_for_forms exactly
    (full/legal name, first, last, preferred first name, location text, city autocomplete text, GPA text, years).
@@ -408,9 +416,10 @@ def main():
         # prompt rule against it (e.g. "willing to relocate to the Bay Area?" -> Yes at low confidence).
         # Force-skip any question that names relocation and isn't clearly about the candidate's own metro.
         metro = (defaults.get("residence_metro") or "").lower()
+        open_reloc = bool(defaults.get("open_to_relocation"))
         for f in fields:
             q = (f.get("question") or "").lower()
-            if "relocat" in q and not (metro and metro in q):
+            if "relocat" in q and not (metro and metro in q) and not open_reloc:
                 if answers.pop(f["key"], None):
                     skipped[f["key"]] = "relocation commitment - never auto-answer, left for you regardless of model output"
         for f in fields:
