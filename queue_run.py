@@ -21,6 +21,7 @@ import re
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from common import ROOT, db
@@ -60,8 +61,7 @@ def main():
     conn = db()
     print(f"launching {len(ids)} application(s)...\n")
 
-    launched, skipped_status = [], []
-    procs = []
+    todo, skipped_status = [], []
     for jid in ids:
         row = conn.execute("SELECT source, company, title, status, salary_min, salary_max FROM jobs WHERE id=?", (jid,)).fetchone()
         if not row:
@@ -75,15 +75,28 @@ def main():
             print(f"  NEEDS RESEARCH {jid}: {company} - {title} ({source} listing, not a direct ATS link - "
                   f"find the real application page first, see out/{slug_of(company, title)}/ once prepared)")
             continue
+        todo.append((jid, source, company, title, lo, hi))
 
+    def prepare(item):
+        jid, _source, company, title, _lo, _hi = item
         folder = ROOT / "out" / slug_of(company, title)
-        if not (folder / "resume.pdf").exists():
-            print(f"  preparing {company} - {title} ...")
-            r = subprocess.run([PY, "tailor.py", jid], cwd=ROOT, capture_output=True, text=True)
-            if r.returncode != 0 or not (folder / "resume.pdf").exists():
-                print(f"  FAILED to prepare {jid}: {r.stderr.strip()[-300:]}")
-                continue
+        if (folder / "resume.pdf").exists():
+            return jid, True, ""
+        r = subprocess.run([PY, "tailor.py", jid], cwd=ROOT, capture_output=True, text=True)
+        return jid, (r.returncode == 0 and (folder / "resume.pdf").exists()), r.stderr.strip()[-300:]
 
+    need = [i for i in todo if not (ROOT / "out" / slug_of(i[2], i[3]) / "resume.pdf").exists()]
+    if need:
+        print(f"  preparing {len(need)} resume/cover letter set(s) in parallel ...")
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        results = {jid: (ok, err) for jid, ok, err in ex.map(prepare, todo)}
+
+    launched, procs = [], []
+    for jid, source, company, title, lo, hi in todo:
+        ok, err = results[jid]
+        if not ok:
+            print(f"  FAILED to prepare {jid}: {err}")
+            continue
         pay = f"${lo // 1000}-{hi // 1000}K" if lo else "pay not listed"
         mode = "--manual" if source in MANUAL_SOURCES else "(window)"
         print(f"  opening {company} - {title} ({pay}) [{mode}]  id={jid}")
@@ -98,10 +111,12 @@ def main():
         for jid, company, title, status in skipped_status:
             print(f"  already {status}: {company} - {title}")
     if launched:
-        print("\nReview each window/paste-sheet, solve any captcha, and click Submit yourself.")
-        print("When done, mark them in one shot, e.g.:")
-        print(f"  python tracker.py mark applied {' '.join(launched)}")
-        print("(swap in only the ids you actually submitted; use 'skip' for any you passed on)")
+        print("\nReview each window, solve any captcha, and click Submit yourself.")
+        print("Window jobs mark themselves applied when the confirmation page appears.")
+        print("Ashby/Lever (--manual) jobs are not auto-detected; mark those yourself:")
+        print(f"  python tracker.py mark applied <job_id> ...   (use 'skip' for any you passed on)")
+        for p in procs:
+            p.wait()
 
 
 if __name__ == "__main__":

@@ -497,7 +497,43 @@ def main():
             print(f"screenshot: {folder / 'apply_filled.png'}")
             browser.close()
             return
-        page.wait_for_event("close", timeout=0)
+        watch_for_submission(page, a.job_id, company, title)
+
+
+CONFIRMED_RE = re.compile(
+    r"thank you for (applying|your application|your interest)|thanks for applying|application (has been |was )?(successfully )?(submitted|received)"
+    r"|we(?:'|’)ve received your application|we have received your application|your application is (in|on its way)", re.I)
+CONFIRMED_URL_RE = re.compile(r"confirmation|/thanks|thank-you|submitted|application-complete", re.I)
+
+
+def page_confirms(page) -> bool:
+    if CONFIRMED_URL_RE.search(page.url):
+        return True
+    for fr in page.frames:
+        try:
+            if CONFIRMED_RE.search(fr.evaluate("document.body ? document.body.innerText.slice(0, 4000) : ''")):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def watch_for_submission(page, job_id, company, title):
+    """Keep the window open for review; when the confirmation page appears, mark the job applied."""
+    print("watching for the confirmation page; this job is marked applied automatically once you submit.")
+    while not page.is_closed():
+        try:
+            if page_confirms(page):
+                conn = db()
+                conn.execute("UPDATE jobs SET status='applied' WHERE id=?", (job_id,))
+                conn.commit()
+                print(f"submission detected: marked applied - {company} - {title} ({job_id})")
+                page.wait_for_timeout(2500)
+                return
+            page.wait_for_timeout(2000)
+        except Exception:
+            return
+    print(f"window closed without a confirmation page; {job_id} left as is")
 
 
 if __name__ == "__main__":
